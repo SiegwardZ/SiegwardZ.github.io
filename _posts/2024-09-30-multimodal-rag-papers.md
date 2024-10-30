@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Multimodal Retrival-Augmented-Genration Papers
-date: 2024-09-30 20:02 +0800
+date: 2024-09-30 22:00 +0800
 categories: [Research, LLM, Multimodal-RAG]
 tags: [research, paper, rag]
 comments: false
