@@ -1,105 +1,127 @@
-<?xml version="1.0" encoding="UTF-8"?> 
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"> 
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+<!-- created with Free Online Sitemap Generator www.xml-sitemaps.com -->
+
+
 <url>
-  <loc>http://siegwardz.github.io/</loc>
+  <loc>https://siegwardz.github.io/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>1.00</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/categories/</loc>
+  <loc>https://siegwardz.github.io/categories/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.80</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/tags/</loc>
+  <loc>https://siegwardz.github.io/tags/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.80</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/about/</loc>
+  <loc>https://siegwardz.github.io/about/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.80</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/posts/llm-values-evaluation-papers/</loc>
+  <loc>https://siegwardz.github.io/posts/llm-values-evaluation-papers/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.80</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/posts/interview/</loc>
+  <loc>https://siegwardz.github.io/posts/interview/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.80</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/posts/multimodal-rag-papers/</loc>
+  <loc>https://siegwardz.github.io/posts/multimodal-rag-papers/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.80</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/posts/notes/</loc>
+  <loc>https://siegwardz.github.io/posts/notes/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.80</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/posts/openings/</loc>
+  <loc>https://siegwardz.github.io/posts/openings/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.80</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/tags/nlp/</loc>
+  <loc>https://siegwardz.github.io/tags/nlp/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.80</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/tags/notes/</loc>
+  <loc>https://siegwardz.github.io/tags/notes/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.80</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/tags/paper/</loc>
+  <loc>https://siegwardz.github.io/tags/paper/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.80</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/tags/research/</loc>
+  <loc>https://siegwardz.github.io/tags/research/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.80</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/tags/ai/</loc>
+  <loc>https://siegwardz.github.io/tags/ai/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.80</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/tags/interview/</loc>
+  <loc>https://siegwardz.github.io/tags/interview/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.80</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/tags/rag/</loc>
+  <loc>https://siegwardz.github.io/tags/rag/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.80</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/tags/technology/</loc>
+  <loc>https://siegwardz.github.io/tags/technology/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.80</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/categories/research/</loc>
+  <loc>https://siegwardz.github.io/categories/research/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.64</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/categories/llm/</loc>
+  <loc>https://siegwardz.github.io/categories/llm/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.64</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/categories/study/</loc>
+  <loc>https://siegwardz.github.io/categories/study/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.64</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/categories/nlp/</loc>
+  <loc>https://siegwardz.github.io/categories/nlp/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.64</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/categories/technology/</loc>
+  <loc>https://siegwardz.github.io/categories/technology/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.64</priority>
 </url>
 <url>
-  <loc>http://siegwardz.github.io/categories/notes/</loc>
+  <loc>https://siegwardz.github.io/categories/notes/</loc>
+  <lastmod>2024-11-07T05:31:46+00:00</lastmod>
+  <priority>0.64</priority>
 </url>
-<url>
-  <loc>http://siegwardz.github.io/images/papers/pcsa-1.png</loc>
-</url>
-<url>
-  <loc>http://siegwardz.github.io/images/papers/value-fulcra.png</loc>
-</url>
-<url>
-  <loc>http://siegwardz.github.io/images/papers/human-values-behind-arguments.png</loc>
-</url>
-<url>
-  <loc>http://siegwardz.github.io/images/notes/transformer-architecture.png</loc>
-</url>
-<url>
-  <loc>http://siegwardz.github.io/images/notes/transformer-attention-formulation.png</loc>
-</url>
-<url>
-  <loc>http://siegwardz.github.io/images/papers/clip.png</loc>
-</url>
-<url>
-  <loc>http://siegwardz.github.io/images/papers/blip.png</loc>
-</url>
-<url>
-  <loc>http://siegwardz.github.io/images/papers/uniir.png</loc>
-</url>
-<url>
-  <loc>http://siegwardz.github.io/images/papers/SnapNTell.png</loc>
-</url>
-<url>
-  <loc>http://siegwardz.github.io/images/papers/wiki-llava.png</loc>
-</url>
-<url>
-  <loc>http://siegwardz.github.io/images/papers/PreFLMR.png</loc>
-</url>
+
+
 </urlset>
