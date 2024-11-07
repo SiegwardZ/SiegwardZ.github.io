@@ -45,7 +45,7 @@ This homepage is merely for recording some day-to-day moments of study and life.
 
 和你一起迎战Fire Demon。
 
-每次听到葱哥阳光爽朗的笑声，总会感觉在这冷冽幽邃的大颗寿司世界里似乎看到了太阳。
+每次听到葱哥阳光爽朗的笑声，总会感觉在这冷冽幽邃的黑魂世界里似乎看到了太阳。
 
 见葱哥的最后一次是在迎战巨人王尤姆时，听他一边喊
 > "Yhorm, old friend. I, Siegward of the Knights of Catarina, have come to uphold my promise! 
@@ -59,7 +59,5 @@ This homepage is merely for recording some day-to-day moments of study and life.
 然后自杀而去，和老友一起从这个世界走了。
 
 每次听到葱哥的这句话，心里都会有一种很复杂的情感涌上来，为葱哥感到欣慰和悲伤。
-
-**【这里缺一张游戏截图，之后补】**
 
 我很喜欢葱哥这个角色，所以自己也用了这个名字，希望能和葱哥一样乐观勇敢。

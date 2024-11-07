@@ -1,6 +1,6 @@
 ---
 layout: post
-title: llm-values-evaluation-papers
+title: Papers on LLM values ​​evaluation
 date: 2024-11-05 13:07 +0800
 categories: [Research, LLM]
 tags: [research, paper, nlp]
