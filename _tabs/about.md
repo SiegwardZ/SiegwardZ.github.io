@@ -61,3 +61,6 @@ This homepage is merely for recording some day-to-day moments of study and life.
 每次听到葱哥的这句话，心里都会有一种很复杂的情感涌上来，为葱哥感到欣慰和悲伤。
 
 我很喜欢葱哥这个角色，所以自己也用了这个名字，希望能和葱哥一样乐观勇敢。
+
+## About profile
+头像是命运石之门(Steins;Gate)的牧濑红莉栖，最喜欢的动画之一
