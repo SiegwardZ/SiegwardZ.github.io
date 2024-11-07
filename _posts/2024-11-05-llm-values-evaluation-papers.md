@@ -8,7 +8,7 @@ comments: false
 toc: true
 description: A collection of papers focused on evaluation methods on the values and truthfulness of LLMs.  
 ---
-## Political Compass or Spinning Arrow? Towards More Meaningful Evaluations for Values and Opinions in Large Language Models [(url)](http://arxiv.org/abs/2402.16786)
+## Political Compass or Spinning Arrow? Towards More Meaningful Evaluations for Values and Opinions in Large Language Models [(url)](https://arxiv.org/abs/2402.16786)
 ![pcsa-1](/images/papers/pcsa-1.png){:w="400" h="700"}
 - Real users do not typically ask LLMs survey questions.
 - Prompts have different levels of constraints
@@ -21,7 +21,7 @@ description: A collection of papers focused on evaluation methods on the values 
 - Forcing models to give a valid response is necessary for applying the PCT to most LLMs
 
 
-## Value FULCRA: Mapping Large Language Models to the Multidimensional Spectrum of Basic Human Values [(url)](http://arxiv.org/abs/2311.10766)
+## Value FULCRA: Mapping Large Language Models to the Multidimensional Spectrum of Basic Human Values [(url)](https://arxiv.org/abs/2311.10766)
 ![value-fulcra](/images/papers/value-fulcra.png)
 - Taking fine-grained classification of values ​​according to Schwartz Theory of Basic Values
   - Four groups 
