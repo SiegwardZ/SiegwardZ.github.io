@@ -834,7 +834,7 @@ b）可使用的最大设备数就是batch size，着限制了可用于训练的
 
 #### MLP（feedforward）部分切分方法
 切分方法如图所示
-![alt text](image.png)
+![megatron-mlp-parallel](images/notes/megatron-mlp-parallel.png)
 假设Y=ACT(XA)，如果A沿行切，那么需要X沿列切，最终得到Y=ACT(X1A1+X2A2)，由于ACT的非线性，这里Y不等于ACT(X1A1)+ACT(X2A2)，因此需要reduce一次才能计算Y，没法并行
 
 但如果A沿列切，则Y=ACT(XA1,XA2)，ACT作用于最后一维hidden_sz的每个元素上，这样通过并行后拼接可以实现激活函数的并行，因此需要将权重函数沿列切（即沿最后一维切）
