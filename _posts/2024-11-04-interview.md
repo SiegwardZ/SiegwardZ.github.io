@@ -176,7 +176,8 @@ $$
         attn_weights = nn.functional.softmax(attn_weights, dim=-1)
 ```
 + 注意这里tgt_len即decoder_seq_len和src_len即encoder_seq_len在生成时往往是不同的，tgt_len每次forward都会增加，src_len仅为input的seq_len，是保持不变的
-+ attention_weights经过一层softmax再乘value（attention_mask长什么样？）
++ attention_weights加上attention_mask后经过一层softmax再乘value，attention_mask包括padding_mask和causal_mask,padding mask用于batch内的对齐，causal_mask在decoder的self-attention训练时使用，维度为(bsz, 1, tgt_len, tgt_len)，为下三角矩阵，causal[i][j]表示token i对token j的注意mask，当i>=j时为1，表明token i可以注意到之前的token j，否则为0。
++ 在实际计算时，attention_mask中的1位置被替换成0，0位置被替换成-inf，这样在softmax之后该位置的分数基本为0
 
 ```python
         if layer_head_mask is not None:
@@ -333,6 +334,7 @@ class BartDecoderLayer(nn.Module):
         self.final_layer_norm = nn.LayerNorm(self.embed_dim)
 ```
 init 函数
++ 注意GPT模型虽然称作decoder-only，但是实际上只保留了multi-head masked self-attention，删去了cross-attention部分
 
 ```python
     def forward(
@@ -704,7 +706,6 @@ generate方法, 参数详解:
 
 
 ### Q
-+ layer_norm 是什么，作用是什么（encoder两次）
 + attention_mask 怎么设置（decoder）
 + positional embedding
 + k-v cache concat 问题
@@ -716,3 +717,204 @@ generate方法, 参数详解:
 + how to generate  (https://huggingface.co/blog/how-to-generate)
 + generation_config
 + 
+### Positional Embedding
+#### 位置编码
+Transformer中的自注意力机制无法捕捉位置信息，这是因为其计算过程具有置换不变性(permutation invariant)，导致打乱输入序列的顺序对输出结果不会产生任何影响。
+
+
+[ref](https://0809zheng.github.io/2022/07/01/posencode.html)
+
+### Questions
+#### 为什么使用多头注意力 (to do: dim error)
+使用多头注意力可以学习到不同的注意力权重，关注到不同的子空间，可以更好地获取输入序列中不同位置的关系信息。
+
+具体来说，看attention计算公式：
+
+假设
+
+$x$: (1,seq_len, hidden_sz), $x_q$: (1,query_len, hidden_sz), n=num_head;
+
+$W_{ki},W_{vi}$: (hidden_sz , head_dim),$ W_{qi}$: (hidden_sz,head_dim); 
+
+$W_k,W_v$: (hidden_sz, n* head_dim=hidden_sz),  $W_q = (W_{q1},W_{q2},..,W{q_n})$: (hidden_sz,hidden_size); 
+
+$$
+\begin{align*}
+\textbf{each head:} Attn_i &= softmax(\frac{x_q W_{qi} W_{ki}^T x^T}{\sqrt{\text{head_dim}}})W_{vi} x \quad\text{  :(1, query_len, head_dim)} \\
+Attn = (Attn_i)_n &= (softmax(\frac{x_q W_{q1} W_{k1}^T x^T}{\sqrt{\text{head_dim}}})W_{v1}x,...,softmax(\frac{x_q W_{qn} W_{kn}^T x^T}{\sqrt{\text{head_dim}}})W_{vn}x) \quad\text{  :(1, query_len, n* head_dim=hidden_sz)}
+\end{align*}
+$$
+$$
+\begin{align*}
+\textbf{no head}: Attn &= softmax(\frac{x_q W_q W_k^T x^T}{\sqrt{\text{hidden_sz}}}) W_v x \\
+& = softmax(\frac{\sum_{i=1}^n x_q W_{qi} W_{ki}^T x^T}{\sqrt{\text{hidden_sz}}}) W_v x\\
+& = (softmax(\frac{\sum_{i=1}^n x_q W_{qi} W_{ki}^T x^T}{\sqrt{\text{hidden_sz}}}) W_{v1} x, ..., softmax(\frac{\sum_{i=1}^n x_q W_{qi} W_{ki}^T x^T}{\sqrt{\text{hidden_sz}}}) W_{vn} x) \quad\text{  :(1, query_len, hidden_sz)}
+\end{align*}
+$$
+多头注意力的情况下，每个头的注意力权重是不同的，因此可以关注到不同子空间的信息；单头注意力情况下虽然最终输出维度相同，但把hidden_sz维度按照num_head*head_dim方式切分后可以发现同一个注意力权重重复了num_head次
+
+#### self-attention 为什么Q,K,V使用不同的权重矩阵生成，为何不能使用同一个值进行自身的点乘？
+可以在不同空间进行投影，提取到更多信息。相同权重模型可能无法很好区分Q,K,V
+
+#### 计算attention时为何选择点乘而不是加法？两者在计算复杂度和效果上有什么区别？
+点乘可以通过矩阵乘法的方式进行并行计算优化，比矩阵加法的并行化实现更容易更高效。理论复杂度一样，但实际上加法之后的非线性激活函数较难并行，因此效果更差。
+
+从数学角度看，点乘是一种衡量两个向量相似度的自然方式。当查询 Q 和键 K 的方向相似时，点积值会较大，softmax后的权重也会较大，意味着这种相似性直接影响了注意力权重的大小。这种直接使用相似性进行权重分配的方式非常直观且高效。
+
+#### 为什么在进行softmax之前需要对attention进行scaled（为什么除以dk的平方根），并使用公式推导进行讲解
+[ref](https://blog.csdn.net/ytusdc/article/details/121622205)
+
+#### 在计算attention score的时候如何对padding做mask操作？
+根据attetnion mask的标记，将不被注意的位置（mask为0）的值都设为较大的负值(如-100)，这样经过softmax之后几乎就基本等于0，也就不会计算该位置的attention score
+(to do: code analysis)
+
+#### 简单讲一下Transformer中的残差结构以及意义.
+残差结构广泛认为由ResNet引入，主要作用为解决梯度消失和权重矩阵退化的问题。
+
+梯度消失是因为根据链式法则，梯度是相乘的，一旦某些项梯度很小，深度网络连乘之后整个梯度会变得非常小。加上残差结构使得每项梯度变为(1+grad)，避免了梯度消失。
+
+权重矩阵退化是因为虽然梯度范数大，但是如果网络的可用自由度对这些范数的贡献非常不均衡，也就是每个层中只有少量的隐藏单元对不同的输入改变它们的激活值，而大部分隐藏单元对不同的输入都是相同的反应，此时整个权重矩阵的秩不高。并且随着网络层数的增加，连乘后使得整个秩变的更低。虽然是一个很高维的矩阵，但是大部分维度却没有信息，表达能力没有看起来那么强大。残差连接正是强制打破了网络的对称性，一定程度上缓解了矩阵低秩的问题，提升了网络的表征能力。
+
+[ref](https://zhuanlan.zhihu.com/p/42833949)
+
+#### 为什么transformer块使用LayerNorm而不是BatchNorm？LayerNorm 在Transformer的位置是哪里？
+Transformer使用LayerNorm而非BatchNorm是因为LayerNorm对每个样本独立进行归一化，适合变长输入序列的处理。而BatchNorm在序列建模中会受到批次大小和序列长度的影响，导致不稳定。
+
+LayerNorm通常放置在每个子层的输出之后。即attention和feed forward之后
+
+#### 简单描述一下Transformer中的前馈神经网络？
+Transformer中的前馈神经网络通常由两个线性层和一个非线性激活函数（如ReLU）组成。输入首先经过线性层，再经过激活函数，最后再通过另一个线性层输出。
+
+#### Encoder端和Decoder端是如何进行交互的？
+在decoder的cross-attention模块进行交互，encoder最后输出的hidden_states作为cross-attention的key和value，decoder的self-attention模块输出的decoder_hidden_states作为query，进行cross-attention实现交互
+
+#### Decoder阶段的多头自注意力和encoder的多头自注意力有什么区别？
+Decoder阶段的多头自注意力需要进行序列mask操作，以防止模型在生成当前词时查看未来的词。而Encoder的多头自注意力则不需要mask，因为它可以同时看到输入序列的所有信息。
+
+#### Transformer的并行化提现在哪个地方？Decoder端可以做并行化吗？
+Transformer的并行化主要体现在Encoder的多个层和多头注意力机制的并行计算上。Decoder端在生成序列时，由于需要依赖前一个时间步的输出，通常难以完全并行化，但在Decoder的每层内部仍可以进行并行处理。
+
+#### 简单描述一下wordpiece model 和 byte pair encoding (to do: more)
+WordPiece模型是一种将单词拆分为子词单元的分词方法，常用于BERT等模型；Byte Pair Encoding（BPE）是一种基于频率的子词分解算法，用于处理低频词和新词。两者都可以减少词汇表大小并提高模型的泛化能力。我自己没有直接应用过，但它们在许多自然语言处理任务中得到了广泛使用。
+
+#### Transformer训练的时候学习率是如何设定的？Dropout是如何设定的，位置在哪里？Dropout 在测试的需要有什么需要注意的吗？(to do: dropout)
+Transformer训练时通常使用学习率调度器（如Warmup和学习率衰减）来设定学习率。Dropout一般设定为0.1左右，适用于多头注意力和前馈神经网络的层之间，以防止过拟合。在测试阶段，Dropout需关闭，以确保模型输出稳定。
+
+
+
+## Megatron
+### 数据并行
+在每个worker之上复制一份模型，这样每个worker都有一个完整模型的副本。输入数据集是分片的，一个训练的小批量数据将在多个worker之间分割；worker定期汇总它们的梯度，以确保所有worker看到一个一致的权重版本。对于无法放进单个worker的大型模型，人们可以在模型之中较小的分片上使用数据并行。
+
+数据并行扩展通常效果很好，但有两个限制：
+
+a）超过某一个点之后，每个GPU的batch size变得太小，这降低了GPU的利用率，增加了通信成本；
+
+b）可使用的最大设备数就是batch size，着限制了可用于训练的加速器数量。
+
+同一个Data Parallel Group内的数据是不同的，相当于把整个输入数据切分成dp size个DP group
+
+### 模型并行
+模型并行模式会让一个模型的内存和计算分布在多个worker之间，以此来解决一个模型在一张卡上无法容纳的问题，其解决方法是把模型放到多个设备之上。
+
+模型并行分为两种：流水线并行和张量并行，就是把模型切分的方式。
+
+流水线并行（pipeline model parallel）是把模型不同的层放到不同设备之上，比如前面几层放到一个设备之上，中间几层放到另外一个设备上，最后几层放到第三个设备之上。
+
+张量并行则是层内分割，把某一个层做切分，放置到不同设备之上，也可以理解为把矩阵运算分配到不同的设备之上，比如把某个矩阵乘法切分成为多个矩阵乘法放到不同设备之上。
+
+#### 通信
+我们接下来看看模型并行的通信状况。
+
+张量并行：通信发生在每层的前向传播和后向传播过程之中，通信类型是all-reduce，不但单次通信数据量大，并且通信频繁(一次forward+backward需要4次all-reduce)。
+
+流水线并行：通信在流水线阶段相邻的切分点之上，通信类型是P2P通信，单次通信数据量较少但是比较频繁，而且因为流水线的特点，会产生GPU空闲时间，这里称为流水线气泡（Bubble）。
+
+因为张量并行一般都在同一个机器之上，所以通过 NVLink 来进行加速，对于流水线并行，一般通过 Infiniband 交换机进行连接。
+
+#### MLP（feedforward）部分切分方法
+切分方法如图所示
+![alt text](image.png)
+假设Y=ACT(XA)，如果A沿行切，那么需要X沿列切，最终得到Y=ACT(X1A1+X2A2)，由于ACT的非线性，这里Y不等于ACT(X1A1)+ACT(X2A2)，因此需要reduce一次才能计算Y，没法并行
+
+但如果A沿列切，则Y=ACT(XA1,XA2)，ACT作用于最后一维hidden_sz的每个元素上，这样通过并行后拼接可以实现激活函数的并行，因此需要将权重函数沿列切（即沿最后一维切）
+
+X:(bz,seq_len,hidden_sz), A:(hidden_sz,ffn_hidden_sz), Ai:(hidden_sz,ffn_hidden_sz_i)
+
+这是第一个Linear+激活函数的并行方法，上一步并行分别在两个GPU上得到Y=(Y1,Y2)，下一步需要经过另一个线性层，Z=DROPOUT(YB),刚好Y是列切，那么将B行切成B1和B2即可,
+Z=DROPOUT(Y1B1+Y2B2),在这里做reduce得到输出Z
+
+#### self-attention部分切分方法
+直接按注意力头切即可
+
+#### 梯度传导
+(to do: more)
+矩阵求导分割转化
+
+### 并行配置
+#### 参数解释
++ p: pplp size
++ t: tp size
++ d: dp size
++ n: num of gpus = p * t * d
++ B: global batch size
++ b: micro batch size
++ m $=\frac{B}{b*d}$ num of microbatches per ppl，当m为1时，相当于B=b*d，即对global batch数据按d进行切分，每个dp组内的micro batch size为B/d
+
+
+
+#### Example
++ n = 16 = {node1:0-7,node2:8-15}
++ tp = 2
++ pp = 4
+
+分组为
+TP: group size为2，共8个组: [0,1],[2,3],[4,5],...,[14,15]，每个group表示一组张量并行，tp的通信仅在组内进行
+PP: group size为4，共4个组: [0,4,8,12],[1,5,9,13],[2,6,10,14],[3,7,11,15], 每个group表示一组流水线并行，pp优先机间进行，pp的p2p通信仅在组内完成
+DP: n/(tp*pp) = 2，说明复制了两个模型，dp为2，group size为2，共8个组: [0,2],[1,3],[4,6],[5,7],...,[13,15]，每个group表示一组数据并行，组内各GPU的数据不同，一个组的数据合并之后为global data
+
+### Deepspeed
+#### 显存占用
++ 假设模型参数量为M，数据格式为fp16，则现存为2M Bytes。 
++ 每个参数对应一个梯度，所以梯度为2M
++ Adam优化器
+  + 包含fp32的参数备份，大小为4M
+  + fp32的一阶momentum，大小为4M
+  + fp32的二阶variance，大小为4M
++ 总计16M Bytes
++ 此即所谓混合精度训练
+
+#### Zero Stages
++ Baseline
+    + 每个GPU上存参数+梯度+优化器参数
+    + 每卡16M
+    + 每个step后进行一次all-reduce计算梯度均值，根据[环状通信](https://zhuanlan.zhihu.com/p/504957661)，对每张卡而言，发送加接收的总通信数据量近似为2M
++ Stage 1
+    + 对优化器参数进行切分，N个GPU每个GPU保存1/N的优化器状态量，合并一起成为一个总的优化器状态量
+    + 每卡4M+12M/N
+    + 通信量同stage2
++ Stage 2
+    + 对模型梯度进行切分，每个GPU保存1/N梯度
+    + 每卡2M + 14M/n
+    + 每卡计算1/N梯度均值，需要一次reduce，通信量M; 算完梯度更新优化器状态，需要一次gather,通信录M
++ Stage 3
+    + 对参数再进行切分，每个GPU保存1/N参数
+    + 每卡16M/n
+    + 多了tp的通信
+
+#### Zero-Offload
+四种计算节点: FWD,BWD,Param Update和float2haf。
+
+FWD和BWD放在GPU，后两个放在CPU计算
+
+多卡场景的offload需要Stage2：一个CPU进程对应一个GPU，负责1/N的梯度和优化器状态。但是GPU和CPU通信总量是恒定的，只和参数量有关，和N无关。
+
+
+ 
+### vLLM
+https://mp.weixin.qq.com/s/-5EniAmFf1v9RdxI5-CwiQ
+
+
+
+
+
