@@ -873,8 +873,8 @@ TP: group size为2，共8个组: [0,1],[2,3],[4,5],...,[14,15]，每个group表�
 PP: group size为4，共4个组: [0,4,8,12],[1,5,9,13],[2,6,10,14],[3,7,11,15], 每个group表示一组流水线并行，pp优先机间进行，pp的p2p通信仅在组内完成
 DP: n/(tp*pp) = 2，说明复制了两个模型，dp为2，group size为2，共8个组: [0,2],[1,3],[4,6],[5,7],...,[13,15]，每个group表示一组数据并行，组内各GPU的数据不同，一个组的数据合并之后为global data
 
-### Deepspeed
-#### 显存占用
+## Deepspeed
+### 显存占用
 + 假设模型参数量为M，数据格式为fp16，则现存为2M Bytes。 
 + 每个参数对应一个梯度，所以梯度为2M
 + Adam优化器
@@ -884,7 +884,7 @@ DP: n/(tp*pp) = 2，说明复制了两个模型，dp为2，group size为2，共8
 + 总计16M Bytes
 + 此即所谓混合精度训练
 
-#### Zero Stages
+### Zero Stages
 + Baseline
     + 每个GPU上存参数+梯度+优化器参数
     + 每卡16M
@@ -902,7 +902,7 @@ DP: n/(tp*pp) = 2，说明复制了两个模型，dp为2，group size为2，共8
     + 每卡16M/n
     + 多了tp的通信
 
-#### Zero-Offload
+### Zero-Offload
 四种计算节点: FWD,BWD,Param Update和float2haf。
 
 FWD和BWD放在GPU，后两个放在CPU计算
@@ -911,7 +911,7 @@ FWD和BWD放在GPU，后两个放在CPU计算
 
 
  
-### vLLM
+## vLLM
 https://mp.weixin.qq.com/s/-5EniAmFf1v9RdxI5-CwiQ
 
 
