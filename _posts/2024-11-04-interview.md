@@ -8,7 +8,7 @@ math: true
 tags: [notes,ai,nlp,interview]
 ---
 ref: [深度学习自然语言处理](https://github.com/DA-southampton/NLP_ability/tree/master/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86)
-## Transformers
+##  Transformers
 ### Transformers 结构
 ![transformer-architecture](/images/notes/transformer-architecture.png){:w="400" h="700"}
 ![transformer-attention-formulation](/images/notes/transformer-attention-formulation.png)
@@ -432,7 +432,7 @@ self-attention part
 ### GenerationMixin 源码解析
 transformers中generationmixin是pretrainedmodel的父类之一，所有生成的方法在此定义。
 
-#### generate方法定义
+#### **generate方法定义**
 ```python
     @torch.no_grad()
     def generate(
@@ -460,7 +460,7 @@ generate方法, 参数详解:
 + assistant_model 一个用于辅助生成的小模型，通过替代大模型预测下一个token来加速推理
 + streamer 用于处理输出sequences
 
-#### generate-预检查
+#### **generate-预检查**
 ```python
         # 1. Handle `generation_config` and kwargs that might update it, and validate the `.generate()` call
         self._validate_model_class() # 检查模型是否支持generate
@@ -512,7 +512,7 @@ generate方法, 参数详解:
 ```
 这部分是对模型输入的准备，调用了_prepare_model_inputs用于获取模型输入，如果指定了inputs，这里没有变化，如果没有指定inputs，这里返回的shape为(batch_sz,encoder_seq_len/1) 分别对应encoder-decoder和decoder-only
 
-#### _prepare_model_inputs方法
+#### **_prepare_model_inputs方法**
 ```python
     def _prepare_model_inputs(
         self,
@@ -582,7 +582,7 @@ generate方法, 参数详解:
 ```
 其中调用了_maybe_initialize_input_ids_for_generation，如下
 
-#### _maybe_initialize_input_ids_for_generation方法
+#### **_maybe_initialize_input_ids_for_generation方法**
 ```python
     def _maybe_initialize_input_ids_for_generation(
         self,
@@ -621,7 +621,7 @@ generate方法, 参数详解:
 + 注意这里对于encoder-decoder模型的decoder部分，第一次输入forward时用encoder_outputs输入给decoder，但是需要将它们的input_ids都设为IGNORE_INDEX=-100
 + 而对于decoder-only模型,返回的是batch_sz个bos_token_id，作为输出的start token，如果已经指定了inputs_embeds，则啥都不返回
 
-#### generate-模型参数补全
+#### **generate-模型参数补全**
 ```python
         # 4. Define other model kwargs
         # decoder-only models with inputs_embeds forwarding must use caching (otherwise we can't detect whether we are
@@ -647,7 +647,7 @@ generate方法, 参数详解:
 + 这里调用_prepare_attention_mask_for_generation获取attention_mask（仅pad为0，其余为1）
 + 这里调用_prepare_encoder_decoder_kwargs_for_generation是对于encoder-decoder模型的情况，如果没有提供encoder_outputs，这里调用encoder的forward一次，获取encoder_outputs，存入到model_kwargs中
 
-####  _prepare_attention_mask_for_generation
+####  **_prepare_attention_mask_for_generation**
 ```python
     def _prepare_attention_mask_for_generation(
         self,
@@ -682,7 +682,7 @@ generate方法, 参数详解:
 ```
 + 有pad则把pad的mask设为0，其余都为1
 
-#### generate-预处理自回归生成的input_ids
+#### **generate-预处理自回归生成的input_ids**
 ```python
         # 5. Prepare `input_ids` which will be used for auto-regressive generation
         if self.config.is_encoder_decoder:
@@ -705,7 +705,248 @@ generate方法, 参数详解:
 + _prepare_decoder_input_ids_for_generation做的事情是把input_ids或decoder_input_ids提取出来作为input_ids，如果没有start_token，再加上start_token
 
 
-### Q
+### Trainer 源码解析
+transformers version 4.46.1
+#### **初始化参数**
+```python
+
+class Trainer:
+    """
+    Trainer is a simple but feature-complete training and eval loop for PyTorch, optimized for 🤗 Transformers.
+
+    Args:
+        model ([`PreTrainedModel`] or `torch.nn.Module`, *optional*):
+            The model to train, evaluate or use for predictions. If not provided, a `model_init` must be passed.
+
+            <Tip>
+
+            [`Trainer`] is optimized to work with the [`PreTrainedModel`] provided by the library. You can still use
+            your own models defined as `torch.nn.Module` as long as they work the same way as the 🤗 Transformers
+            models.
+
+            </Tip>
+
+        args ([`TrainingArguments`], *optional*):
+            The arguments to tweak for training. Will default to a basic instance of [`TrainingArguments`] with the
+            `output_dir` set to a directory named *tmp_trainer* in the current directory if not provided.
+        data_collator (`DataCollator`, *optional*):
+            The function to use to form a batch from a list of elements of `train_dataset` or `eval_dataset`. Will
+            default to [`default_data_collator`] if no `processing_class` is provided, an instance of
+            [`DataCollatorWithPadding`] otherwise if the processing_class is a feature extractor or tokenizer.
+        train_dataset (Union[`torch.utils.data.Dataset`, `torch.utils.data.IterableDataset`, `datasets.Dataset`], *optional*):
+            The dataset to use for training. If it is a [`~datasets.Dataset`], columns not accepted by the
+            `model.forward()` method are automatically removed.
+
+            Note that if it's a `torch.utils.data.IterableDataset` with some randomization and you are training in a
+            distributed fashion, your iterable dataset should either use a internal attribute `generator` that is a
+            `torch.Generator` for the randomization that must be identical on all processes (and the Trainer will
+            manually set the seed of this `generator` at each epoch) or have a `set_epoch()` method that internally
+            sets the seed of the RNGs used.
+        eval_dataset (Union[`torch.utils.data.Dataset`, Dict[str, `torch.utils.data.Dataset`, `datasets.Dataset`]), *optional*):
+             The dataset to use for evaluation. If it is a [`~datasets.Dataset`], columns not accepted by the
+             `model.forward()` method are automatically removed. If it is a dictionary, it will evaluate on each
+             dataset prepending the dictionary key to the metric name.
+        processing_class (`PreTrainedTokenizerBase` or `BaseImageProcessor` or `FeatureExtractionMixin` or `ProcessorMixin`, *optional*):
+            Processing class used to process the data. If provided, will be used to automatically process the inputs
+            for the model, and it will be saved along the model to make it easier to rerun an interrupted training or
+            reuse the fine-tuned model.
+            This supercedes the `tokenizer` argument, which is now deprecated.
+        model_init (`Callable[[], PreTrainedModel]`, *optional*):
+            A function that instantiates the model to be used. If provided, each call to [`~Trainer.train`] will start
+            from a new instance of the model as given by this function.
+
+            The function may have zero argument, or a single one containing the optuna/Ray Tune/SigOpt trial object, to
+            be able to choose different architectures according to hyper parameters (such as layer count, sizes of
+            inner layers, dropout probabilities etc).
+        compute_loss_func (`Callable`, *optional*):
+            A function that accepts the raw model outputs, labels, and the number of items in the entire accumulated
+            batch (batch_size * gradient_accumulation_steps) and returns the loss. For example, here is one using
+            the loss function from `transformers`
+        compute_metrics (`Callable[[EvalPrediction], Dict]`, *optional*):
+            The function that will be used to compute metrics at evaluation. Must take a [`EvalPrediction`] and return
+            a dictionary string to metric values. *Note* When passing TrainingArgs with `batch_eval_metrics` set to
+            `True`, your compute_metrics function must take a boolean `compute_result` argument. This will be triggered
+            after the last eval batch to signal that the function needs to calculate and return the global summary
+            statistics rather than accumulating the batch-level statistics
+        callbacks (List of [`TrainerCallback`], *optional*):
+            A list of callbacks to customize the training loop. Will add those to the list of default callbacks
+            detailed in [here](callback).
+
+            If you want to remove one of the default callbacks used, use the [`Trainer.remove_callback`] method.
+        optimizers (`Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]`, *optional*, defaults to `(None, None)`):
+            A tuple containing the optimizer and the scheduler to use. Will default to an instance of [`AdamW`] on your
+            model and a scheduler given by [`get_linear_schedule_with_warmup`] controlled by `args`.
+        preprocess_logits_for_metrics (`Callable[[torch.Tensor, torch.Tensor], torch.Tensor]`, *optional*):
+            A function that preprocess the logits right before caching them at each evaluation step. Must take two
+            tensors, the logits and the labels, and return the logits once processed as desired. The modifications made
+            by this function will be reflected in the predictions received by `compute_metrics`.
+
+            Note that the labels (second parameter) will be `None` if the dataset does not have them.
+
+    Important attributes:
+
+        - **model** -- Always points to the core model. If using a transformers model, it will be a [`PreTrainedModel`]
+          subclass.
+        - **model_wrapped** -- Always points to the most external model in case one or more other modules wrap the
+          original model. This is the model that should be used for the forward pass. For example, under `DeepSpeed`,
+          the inner model is wrapped in `DeepSpeed` and then again in `torch.nn.DistributedDataParallel`. If the inner
+          model hasn't been wrapped, then `self.model_wrapped` is the same as `self.model`.
+        - **is_model_parallel** -- Whether or not a model has been switched to a model parallel mode (different from
+          data parallelism, this means some of the model layers are split on different GPUs).
+        - **place_model_on_device** -- Whether or not to automatically place the model on the device - it will be set
+          to `False` if model parallel or deepspeed is used, or if the default
+          `TrainingArguments.place_model_on_device` is overridden to return `False` .
+        - **is_in_train** -- Whether or not a model is currently running `train` (e.g. when `evaluate` is called while
+          in `train`)
+
+    """
+```
+参数如下：
+- model: PretrainedModel or torch.nn.Module，如非huggingface model，需要提供model_init函数
+- args: TrainingArguments
+- data_collator: 定义如何将单个样本组装成一个batch，如可使用DataCollatorWithPadding来处理动态长度的输入
+- train_dataset: torch.utils.data.Dataset或datasets.Dataset
+- eval_dataset: 和train_dataset类似
+- processing_class: 预处理类，包括`PreTrainedTokenizerBase` or `BaseImageProcessor` or `FeatureExtractionMixin` or `ProcessorMixin`，怎么用待进一步了解
+- model_init: Callable，每次`trainer.train()`时调用，用于自定义初始化模型方法
+- compute_loss_func: Callable，接收整个accumulated batch，包括模型原始输出（如logits）、labels等，计算并返回loss(一个单元tensor，包含gradient，用于之后backward)，需要自定义loss时使用
+- compute_metrics: Callable, 接收EvalPrediction参数，里面包含处理过后的模型输出、labels等，用于eval metrics的计算。当args中的batch_eval_metrics设为True时，还额外接收一个compute_result参数，用于指示当前是否需要计算，只有在eval batch的最后才会触发计算
+- callbacks: 自定义callback，没用过，不清楚
+- optimizers: 一个tuple，包含torch.optim.Optimizer和torch.optim.lr_scheduler.LambdaLR，默认为AdamW和用args中的参数调用get_linear_schedule_with_warmup初始化一个lr_scheduler
+- preprocess_logits_for_metrics: Callable，接收模型输出的logits和数据的labels，在传给compute_metrics计算前进行预处理，其返回值将出现在EvalPrediction.predictions中。此外，可以自定义此函数用于解决eval阶段爆显存的问题，见[Eval-OOM](/posts/notes/#huggingface-tranier-oom-during-evaluation)
+
+官方指出的一些重要属性:
+- model: 指向核心模型，如PretrainedModel
+- model_wrapped: 如果被Deepspeed等包装，则指向最外层的模型
+- is_model_parallel: 是否使用模型并行（tensor parallel）
+- place_model_on_device: 控制模型是否自动放到指定device上，如果用了Deepspeed或model parallel，将为False
+- is_in_train: 模型是否在训练过程中（evaluate也算）
+
+#### **trainer.train()**
+```python
+    def train(
+        self,
+        resume_from_checkpoint: Optional[Union[str, bool]] = None,
+        trial: Union["optuna.Trial", Dict[str, Any]] = None,
+        ignore_keys_for_eval: Optional[List[str]] = None,
+        **kwargs,
+    ):
+        """
+        Main training entry point.
+
+        Args:
+            resume_from_checkpoint (`str` or `bool`, *optional*):
+                If a `str`, local path to a saved checkpoint as saved by a previous instance of [`Trainer`]. If a
+                `bool` and equals `True`, load the last checkpoint in *args.output_dir* as saved by a previous instance
+                of [`Trainer`]. If present, training will resume from the model/optimizer/scheduler states loaded here.
+            trial (`optuna.Trial` or `Dict[str, Any]`, *optional*):
+                The trial run or the hyperparameter dictionary for hyperparameter search.
+            ignore_keys_for_eval (`List[str]`, *optional*)
+                A list of keys in the output of your model (if it is a dictionary) that should be ignored when
+                gathering predictions for evaluation during the training.
+            kwargs (`Dict[str, Any]`, *optional*):
+                Additional keyword arguments used to hide deprecated arguments
+        """
+```
+初始化参数
+- resume_from_checkpoint: 指定是否从checkpoint开始恢复训练
+- trial: 超参数搜索相关设置，没用过，不了解
+- ignore_keys_for_eval: eval时忽略模型输出的某些key（如果输出形式是dict类型的话）
+
+```python
+    # from GPT-4o ❤
+    if resume_from_checkpoint is False:
+        resume_from_checkpoint = None  # 如果布尔值为False，则不恢复检查点
+
+    # 初始化内存监控
+    self._memory_tracker.start()
+
+    args = self.args  # 获取训练参数配置
+
+    self.is_in_train = True  # 标记为训练状态
+
+    # 如果启用了NEFTune噪声增强，则激活模型的相关钩子
+    if self.neftune_noise_alpha is not None:
+        self.model = self._activate_neftune(self.model)
+
+    # 确保在某些情况下将模型移至设备上（如启用了特定评估模式但未训练时）
+    if (args.fp16_full_eval or args.bf16_full_eval) and not args.do_train and not self.is_model_parallel:
+        self._move_model_to_device(self.model, args.device)
+
+    # 处理已弃用的`model_path`参数
+    if "model_path" in kwargs:
+        resume_from_checkpoint = kwargs.pop("model_path")  # 将其映射到resume_from_checkpoint
+        warnings.warn(
+            "`model_path`已弃用，未来版本将移除。请改用`resume_from_checkpoint`。",
+            FutureWarning,
+        )
+
+    # 检查是否存在未预料的关键字参数，抛出异常
+    if len(kwargs) > 0:
+        raise TypeError(f"train()收到未预期的关键字参数: {', '.join(list(kwargs.keys()))}.")
+
+    # 设置超参数搜索环境（包括随机种子等）
+    self._hp_search_setup(trial)
+    self._train_batch_size = self.args.train_batch_size  # 初始化训练批量大小
+
+    # 模型重新初始化
+    model_reloaded = False
+    if self.model_init is not None:
+        # 设置随机种子以确保模型初始化的确定性
+        enable_full_determinism(self.args.seed) if self.args.full_determinism else set_seed(self.args.seed)
+        self.model = self.call_model_init(trial)  # 根据超参数重新初始化模型
+        model_reloaded = True
+        # 同时重新初始化优化器和学习率调度器
+        self.optimizer, self.lr_scheduler = None, None
+
+    # 如果启用了检查点恢复
+    if isinstance(resume_from_checkpoint, bool) and resume_from_checkpoint:
+        resume_from_checkpoint = get_last_checkpoint(args.output_dir)  # 获取最后的检查点
+        if resume_from_checkpoint is None:
+            raise ValueError(f"输出目录({args.output_dir})中未找到有效的检查点")
+
+    if resume_from_checkpoint is not None:
+        # 在没有特定分布式训练启用时，直接从检查点加载模型状态
+        if not is_sagemaker_mp_enabled() and not self.is_deepspeed_enabled and not self.is_fsdp_enabled:
+            self._load_from_checkpoint(resume_from_checkpoint)
+        # 更新批量大小（如果适用）
+        state = TrainerState.load_from_json(os.path.join(resume_from_checkpoint, TRAINER_STATE_NAME))
+        if state.train_batch_size is not None:
+            self._train_batch_size = state.train_batch_size
+
+    # 如果模型重新初始化，将其移动到目标设备并更新包装模型
+    if model_reloaded:
+        if self.place_model_on_device:
+            self._move_model_to_device(self.model, args.device)
+        self.model_wrapped = self.model  # 更新模型包装对象
+
+    # 查找适合的批量大小并运行内部训练循环
+    inner_training_loop = find_executable_batch_size(
+        self._inner_training_loop, self._train_batch_size, args.auto_find_batch_size
+    )
+    if args.push_to_hub:  # 如果启用了将模型推送到Hugging Face Hub
+        try:
+            hf_hub_utils.disable_progress_bars()  # 临时禁用进度条
+            return inner_training_loop(
+                args=args,
+                resume_from_checkpoint=resume_from_checkpoint,
+                trial=trial,
+                ignore_keys_for_eval=ignore_keys_for_eval,
+            )
+        finally:
+            hf_hub_utils.enable_progress_bars()  # 确保训练完成后重新启用进度条
+    else:
+        # 普通情况下运行内部训练循环
+        return inner_training_loop(
+            args=args,
+            resume_from_checkpoint=resume_from_checkpoint,
+            trial=trial,
+            ignore_keys_for_eval=ignore_keys_for_eval,
+        )
+
+```
+
+<!-- ### Q
 + attention_mask 怎么设置（decoder）
 + positional embedding
 + k-v cache concat 问题
@@ -715,17 +956,17 @@ generate方法, 参数详解:
 + ffn作用，为什么要放大再投回来
 + word_embedding
 + how to generate  (https://huggingface.co/blog/how-to-generate)
-+ generation_config
-+ 
++ generation_config -->
+
 ### Positional Embedding
-#### 位置编码
+#### **位置编码**
 Transformer中的自注意力机制无法捕捉位置信息，这是因为其计算过程具有置换不变性(permutation invariant)，导致打乱输入序列的顺序对输出结果不会产生任何影响。
 
 
 [ref](https://0809zheng.github.io/2022/07/01/posencode.html)
 
 ### Questions
-#### 为什么使用多头注意力 (to do: dim error)
+#### **为什么使用多头注意力 (to do: dim error)**
 使用多头注意力可以学习到不同的注意力权重，关注到不同的子空间，可以更好地获取输入序列中不同位置的关系信息。
 
 具体来说，看attention计算公式：
@@ -753,22 +994,22 @@ $$
 $$
 多头注意力的情况下，每个头的注意力权重是不同的，因此可以关注到不同子空间的信息；单头注意力情况下虽然最终输出维度相同，但把hidden_sz维度按照num_head*head_dim方式切分后可以发现同一个注意力权重重复了num_head次
 
-#### self-attention 为什么Q,K,V使用不同的权重矩阵生成，为何不能使用同一个值进行自身的点乘？
+#### **self-attention 为什么Q,K,V使用不同的权重矩阵生成，为何不能使用同一个值进行自身的点乘？**
 可以在不同空间进行投影，提取到更多信息。相同权重模型可能无法很好区分Q,K,V
 
-#### 计算attention时为何选择点乘而不是加法？两者在计算复杂度和效果上有什么区别？
+#### **计算attention时为何选择点乘而不是加法？两者在计算复杂度和效果上有什么区别？**
 点乘可以通过矩阵乘法的方式进行并行计算优化，比矩阵加法的并行化实现更容易更高效。理论复杂度一样，但实际上加法之后的非线性激活函数较难并行，因此效果更差。
 
 从数学角度看，点乘是一种衡量两个向量相似度的自然方式。当查询 Q 和键 K 的方向相似时，点积值会较大，softmax后的权重也会较大，意味着这种相似性直接影响了注意力权重的大小。这种直接使用相似性进行权重分配的方式非常直观且高效。
 
-#### 为什么在进行softmax之前需要对attention进行scaled（为什么除以dk的平方根），并使用公式推导进行讲解
+#### **为什么在进行softmax之前需要对attention进行scaled（为什么除以dk的平方根），并使用公式推导进行讲解**
 [ref](https://blog.csdn.net/ytusdc/article/details/121622205)
 
-#### 在计算attention score的时候如何对padding做mask操作？
+#### **在计算attention score的时候如何对padding做mask操作？**
 根据attetnion mask的标记，将不被注意的位置（mask为0）的值都设为较大的负值(如-100)，这样经过softmax之后几乎就基本等于0，也就不会计算该位置的attention score
 (to do: code analysis)
 
-#### 简单讲一下Transformer中的残差结构以及意义.
+#### **简单讲一下Transformer中的残差结构以及意义.**
 残差结构广泛认为由ResNet引入，主要作用为解决梯度消失和权重矩阵退化的问题。
 
 梯度消失是因为根据链式法则，梯度是相乘的，一旦某些项梯度很小，深度网络连乘之后整个梯度会变得非常小。加上残差结构使得每项梯度变为(1+grad)，避免了梯度消失。
@@ -777,28 +1018,19 @@ $$
 
 [ref](https://zhuanlan.zhihu.com/p/42833949)
 
-#### 为什么transformer块使用LayerNorm而不是BatchNorm？LayerNorm 在Transformer的位置是哪里？
+#### **为什么transformer块使用LayerNorm而不是BatchNorm？LayerNorm 在Transformer的位置是哪里？**
 Transformer使用LayerNorm而非BatchNorm是因为LayerNorm对每个样本独立进行归一化，适合变长输入序列的处理。而BatchNorm在序列建模中会受到批次大小和序列长度的影响，导致不稳定。
 
 LayerNorm通常放置在每个子层的输出之后。即attention和feed forward之后
 
-#### 简单描述一下Transformer中的前馈神经网络？
-Transformer中的前馈神经网络通常由两个线性层和一个非线性激活函数（如ReLU）组成。输入首先经过线性层，再经过激活函数，最后再通过另一个线性层输出。
-
-#### Encoder端和Decoder端是如何进行交互的？
+#### **Encoder端和Decoder端是如何进行交互的？**
 在decoder的cross-attention模块进行交互，encoder最后输出的hidden_states作为cross-attention的key和value，decoder的self-attention模块输出的decoder_hidden_states作为query，进行cross-attention实现交互
 
-#### Decoder阶段的多头自注意力和encoder的多头自注意力有什么区别？
+#### **Decoder阶段的多头自注意力和encoder的多头自注意力有什么区别？**
 Decoder阶段的多头自注意力需要进行序列mask操作，以防止模型在生成当前词时查看未来的词。而Encoder的多头自注意力则不需要mask，因为它可以同时看到输入序列的所有信息。
 
-#### Transformer的并行化提现在哪个地方？Decoder端可以做并行化吗？
+#### **Transformer的并行化提现在哪个地方？Decoder端可以做并行化吗？**
 Transformer的并行化主要体现在Encoder的多个层和多头注意力机制的并行计算上。Decoder端在生成序列时，由于需要依赖前一个时间步的输出，通常难以完全并行化，但在Decoder的每层内部仍可以进行并行处理。
-
-#### 简单描述一下wordpiece model 和 byte pair encoding (to do: more)
-WordPiece模型是一种将单词拆分为子词单元的分词方法，常用于BERT等模型；Byte Pair Encoding（BPE）是一种基于频率的子词分解算法，用于处理低频词和新词。两者都可以减少词汇表大小并提高模型的泛化能力。我自己没有直接应用过，但它们在许多自然语言处理任务中得到了广泛使用。
-
-#### Transformer训练的时候学习率是如何设定的？Dropout是如何设定的，位置在哪里？Dropout 在测试的需要有什么需要注意的吗？(to do: dropout)
-Transformer训练时通常使用学习率调度器（如Warmup和学习率衰减）来设定学习率。Dropout一般设定为0.1左右，适用于多头注意力和前馈神经网络的层之间，以防止过拟合。在测试阶段，Dropout需关闭，以确保模型输出稳定。
 
 
 
@@ -823,7 +1055,7 @@ b）可使用的最大设备数就是batch size，着限制了可用于训练的
 
 张量并行则是层内分割，把某一个层做切分，放置到不同设备之上，也可以理解为把矩阵运算分配到不同的设备之上，比如把某个矩阵乘法切分成为多个矩阵乘法放到不同设备之上。
 
-#### 通信
+#### **通信**
 我们接下来看看模型并行的通信状况。
 
 张量并行：通信发生在每层的前向传播和后向传播过程之中，通信类型是all-reduce，不但单次通信数据量大，并且通信频繁(一次forward+backward需要4次all-reduce)。
@@ -832,7 +1064,7 @@ b）可使用的最大设备数就是batch size，着限制了可用于训练的
 
 因为张量并行一般都在同一个机器之上，所以通过 NVLink 来进行加速，对于流水线并行，一般通过 Infiniband 交换机进行连接。
 
-#### MLP（feedforward）部分切分方法
+#### **MLP（feedforward）部分切分方法**
 切分方法如图所示
 ![megatron-mlp-parallel](images/notes/megatron-mlp-parallel.png)
 假设Y=ACT(XA)，如果A沿行切，那么需要X沿列切，最终得到Y=ACT(X1A1+X2A2)，由于ACT的非线性，这里Y不等于ACT(X1A1)+ACT(X2A2)，因此需要reduce一次才能计算Y，没法并行
@@ -844,26 +1076,26 @@ X:(bz,seq_len,hidden_sz), A:(hidden_sz,ffn_hidden_sz), Ai:(hidden_sz,ffn_hidden_
 这是第一个Linear+激活函数的并行方法，上一步并行分别在两个GPU上得到Y=(Y1,Y2)，下一步需要经过另一个线性层，Z=DROPOUT(YB),刚好Y是列切，那么将B行切成B1和B2即可,
 Z=DROPOUT(Y1B1+Y2B2),在这里做reduce得到输出Z
 
-#### self-attention部分切分方法
+#### **self-attention部分切分方法**
 直接按注意力头切即可
 
-#### 梯度传导
+#### **梯度传导**
 (to do: more)
 矩阵求导分割转化
 
 ### 并行配置
-#### 参数解释
+#### **参数解释**
 + p: pplp size
 + t: tp size
 + d: dp size
 + n: num of gpus = p * t * d
 + B: global batch size
 + b: micro batch size
-+ m $=\frac{B}{b*d}$ num of microbatches per ppl，当m为1时，相当于B=b*d，即对global batch数据按d进行切分，每个dp组内的micro batch size为B/d
++ m $=\frac{B}{b *  d}$ num of microbatches per ppl，当m为1时，相当于B=b*d，即对global batch数据按d进行切分，每个dp组内的micro batch size为B/d
 
 
 
-#### Example
+#### **Example**
 + n = 16 = {node1:0-7,node2:8-15}
 + tp = 2
 + pp = 4
