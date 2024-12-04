@@ -7,11 +7,11 @@ comment: false
 math: true
 tags: [notes,ai,nlp,interview]
 ---
-ref: [深度学习自然语言处理](https://github.com/DA-southampton/NLP_ability/tree/master/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86)
 ##  Transformers
 ### Transformers 结构
 ![transformer-architecture](/images/notes/transformer-architecture.png){:w="400" h="700"}
 ![transformer-attention-formulation](/images/notes/transformer-attention-formulation.png)
+
 
 ### Multi-head Attention 源码解析
 ```python
@@ -946,6 +946,10 @@ class Trainer:
 
 ```
 
+#### **trainer._inner_training_loop()**
+训练流程代码
+
+
 <!-- ### Q
 + attention_mask 怎么设置（decoder）
 + positional embedding
@@ -966,6 +970,7 @@ Transformer中的自注意力机制无法捕捉位置信息，这是因为其计
 [ref](https://0809zheng.github.io/2022/07/01/posencode.html)
 
 ### Questions
+ref: [深度学习自然语言处理](https://github.com/DA-southampton/NLP_ability/tree/master/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86)
 #### **为什么使用多头注意力 (to do: dim error)**
 使用多头注意力可以学习到不同的注意力权重，关注到不同的子空间，可以更好地获取输入序列中不同位置的关系信息。
 
