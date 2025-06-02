@@ -1,10 +1,10 @@
 ---
 layout: post
-title: RL Theory Paper Journal
+title: RL Theory Paper Notes
 date: 2025-04-28 12:34 +0800
 categories: [Study, Math, Paper]
 tags: [math,study,optimization,rl]
-description: Journal of rl theory papers, including theorems, lemmas and informative propositions.
+description: Notes of rl theory papers, including theorems, lemmas and informative propositions.
 comments: false
 math: true
 ---
@@ -139,10 +139,140 @@ $$.
 
 
 ## A Natural Policy Gradient
+[url](https://proceedings.neurips.cc/paper_files/paper/2001/hash/4b86abe48d358ecf194c56c69108433e-Abstract.html)
+### Preliminary
+The steepest descent direction of 
+$$
+\eta(\theta) 
+$$
+is defined as the vector 
+$$
+d\theta
+$$
+that minimizes
+$$
+\eta(\theta+d\theta)
+$$
+under the constrain that the squared length
+$$
+|d\theta|^2 = d\theta^TG(\theta)d\theta
+$$
+is held to a small constant (
+$$
+G(\theta)
+$$
+is some positive-definite metric matrix).
+
+The steepest descent direction is then given by
+$$
+G^{-1}\nabla \eta(\theta)
+$$
+
+#### Theorem 1 in [Amari's paper](https://d1wqtxts1xzle7.cloudfront.net/32944066/Amari_-_Natural_Gradient_works_efficiently_in_learning-libre.pdf?1392043999=&response-content-disposition=inline%3B+filename%3DNatural_Gradient_Works_Efficiently_in_Le.pdf&Expires=1745912715&Signature=TYd1GsiV2Kc1zii~ATnC-0AcetCG0PdqqTd~jiF4hBHWDZV~D77ATMha-z2dQ-F9PNwoABxYn1YFW81HP8d6FDeKDiElyHhZskyAtyjhUUxpV6T6-9OhfeTjVKaOUox4lIJ5MdjTuTkKlAIQssIm-WarlwedoDXQv0XVk6ScUOzGNBrysiwVg7iNpEG67lPocgoJfsxEOO64UIhmaX6b-kX4RCa2aoADQKaIN-mOdFku4wkT4gw79ySG~e903Okfp6C7oiwI8zWVovUKdG-NfN-V3C3ZLVJHS1fHhZ4px9BkJ358Jm-KYbZ6stjLQyGyyxrF9PVqozKkMzK81Xnwag__&Key-Pair-Id=APKAJLOHF5GGSLRBV4ZA)
+
+The steepest descent direction of 
+$$
+L(w)
+$$
+in a Riemannian space is given by
+
+$$
+- \tilde{\nabla} L(w) = - G^{-1}(w) \nabla L(w)
+$$
+
+where
+$$
+\nabla L 
+$$
+is the conventional gradient.
+
+The Fisher information matrix of a distribution
+$$
+\pi(a|s,\theta)
+$$
+is 
+
+$$
+F_s(\theta) = \mathbb{E}_{\pi(a|s,\theta)}\big[\nabla_\theta \pi(a|s,\theta) (\nabla_\theta \pi(a|s,\theta))^T\big]
+$$
+
+which is an invariant metric on the space of the parameters of probability distributions, as shown by Amiri.
+
+So the steepest descent direction of the value function is
+
+$$
+\tilde{\nabla} \eta(\theta) = F(\theta)^{-1}\nabla \eta(\theta) = \big(\mathbb{E}_{\rho^\pi(s)}[F_s(\theta)]\big)^{-1} \nabla \eta(\theta)
+$$
+
+### Theorem 1
+For vectors
+$$
+\theta,\omega \in \mathbb{R}^m
+$$
+,we define
+
+$$
+\psi^\pi(s,a) = \nabla \log \pi(a|s,\theta), f^\pi(s,a,\omega) = \omega^T\psi^\pi(s,a)
+$$
+
+Let 
+$$
+\tilde{\omega} 
+$$
+minimize the mean squared error
+
+$$
+\epsilon(\omega,\pi_\theta) = \sum_{s}\rho^{\pi_\theta}(s) \sum_{a} \pi_\theta(a|s) \big[f^{\pi_\theta}(s,a,\omega) - Q^{\pi_\theta}(s,a)  \big]^2
+$$
+
+Then,
+
+$$
+\tilde{\omega} = \tilde{\nabla} \eta(\theta)
+$$
+
+*Proof:*
+
+$$
+\tilde{\omega} 
+$$
+minimizes the squred error, which implies
+
+$$
+\nabla_\omega \epsilon |_{\omega = \tilde{\omega}} = \sum_{s} \rho^{\pi_\theta}(s)\sum_a \pi_\theta(a|s) \psi^{\pi_\theta}(s,a) \big( \psi^{\pi_\theta}(s,a)^T \tilde{\omega} - Q^{\pi_\theta}(s,a) \big) = 0
+$$
+
+or equivalently:
+
+$$
+\sum_{s} \rho^{\pi_\theta}(s)\sum_a \pi_\theta(a|s) \psi^{\pi_\theta}(s,a) \psi^{\pi_\theta}(s,a)^T \tilde{\omega}  = \sum_{s} \rho^{\pi_\theta}(s)\sum_a \pi_\theta(a|s) \psi^{\pi_\theta}(s,a) Q^{\pi_\theta}(s,a)
+$$
+
+By definition 
+$$
+\nabla \pi_\theta(a|s,\theta) = \pi_\theta(a|s)\psi^{\pi_\theta}(s,a)   
+$$
+, so 
+
+$$
+\text{RHS} = \sum_s \rho^{\pi_\theta}(s) \sum_a \nabla \pi_\theta(a|s) Q^{\pi_\theta}(s,a) = \nabla \eta(\theta) 
+$$
+
+while
+
+$$
+\text{LHS} = \bigg( \sum_{s} \rho^{\pi_\theta}(s)\sum_a \pi_\theta(a|s) \psi^{\pi_\theta}(s,a) \psi^{\pi_\theta}(s,a)^T \bigg)\tilde{\omega} = F(\theta) \tilde{\omega} 
+$$
+
+So 
+$$
+\tilde{\omega} = F(\theta)^{-1} \nabla \eta(\theta)
+$$
+
 
 
 ## On the Theory of Policy Gradient Methods: Optimality, Approximation, and Distribution Shift
-[arxiv](http://arxiv.org/abs/1908.00261)
+[arxiv](https://arxiv.org/abs/1908.00261)
 ### Definition
 MDP
 $$
@@ -235,3 +365,30 @@ $$s_0$$
 $$
 V^\pi(s_0) - V^{\pi^\prime}(s_0) = \frac{1}{1-\gamma}\mathbb{E}_{s\sim d^\pi_{s_0}}\mathbb{E}_{a \sim \pi(\cdot|s)} \big[ A^{\pi^\prime}(s,a)\big]
 $$
+
+### Lemma 6.2 (NPG Regre Lemma)
+Fix a comparison policy $$\tilde{\pi}$$ and a state distribution $$\rho$$. 
+Assume for all $$s \in \mathcal{S}$$ and $$a \in \mathcal{A}$$ that $$\log \pi_\theta(a|s)$$ is a $$\beta$$-smooth function of $$\theta$$. Consider the update rule 
+
+$$
+\theta^{(t+1)} = \theta^{(t)} + \eta \omega^{(t)}
+$$
+
+where $$\pi^{(0)}$$ is the uniform distribution (for all states) and where the sequence of weights $$w^{(0)},\ldots,w^{(T)}$$, satisfies $$\|w^{(t)}\|_2 \le W$$. Define:
+
+$$
+\text{err}_t = \mathbb{E}_{s \sim \tilde{d}}\mathbb{E}_{a \sim \tilde{\pi} ( \cdot |s)} \big[A^{(t)}(s,a) - \omega^{(t)} \cdot \nabla_\theta \log \pi^{(t)}(a|s) \big]
+$$
+
+We have that:
+
+$$
+\begin{align*}
+\underset{t \le T}{\min} \{ V^{\tilde{\pi}}(\rho) - V^{(t)}(\rho) \} &\le \frac{1}{T}  \sum_{t=0}^{T-1}\big(V^{\tilde{\pi}}(\rho) - V^{(t)}(\rho)\big) \\
+& \le \frac{1}{1-\gamma} \bigg( \frac{\log |A|}{\eta T} + \frac{\eta \beta W^2}{2} + \frac{1}{T}\sum_{t=0}^{T-1}\text{err}_t \bigg)
+\end{align*}
+$$
+
+
+
+
